@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BusinessInput } from "@/components/business-input";
 import { ResultsDashboard } from "@/components/results-dashboard";
 import { AnalyzeResponse, StackRecommendation } from "@/types";
+import { saveDashboardData } from "@/lib/dashboard-storage";
 import { Layers } from "lucide-react";
 
 export default function Home() {
@@ -12,11 +13,17 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<StackRecommendation | null>(null);
+  const [rawAnswers, setRawAnswers] = useState<Record<string, unknown>>({});
 
-  async function handleGenerate(ideaOverride?: string, budgetOverride?: number) {
+  async function handleGenerate(
+    ideaOverride?: string,
+    budgetOverride?: number,
+    answers?: Record<string, unknown>
+  ) {
     const idea = ideaOverride || businessIdea;
     const useBudget = budgetOverride ?? budget;
     setBudget(useBudget);
+    if (answers) setRawAnswers(answers);
     setIsLoading(true);
     setError(null);
     setResult(null);
@@ -35,6 +42,8 @@ export default function Home() {
       }
 
       setResult(data.data);
+      // Save to localStorage for the dashboard
+      saveDashboardData(data.data, answers || {});
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
@@ -83,7 +92,7 @@ export default function Home() {
             <BusinessInput
               value={businessIdea}
               onChange={setBusinessIdea}
-              onSubmit={(combined, b) => handleGenerate(combined, b)}
+              onSubmit={(combined, b, answers) => handleGenerate(combined, b, answers)}
               isLoading={isLoading}
             />
 

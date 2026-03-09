@@ -112,3 +112,116 @@ export interface AnalyzeResponse {
   data?: StackRecommendation;
   error?: string;
 }
+
+// --- Dashboard types ---
+
+export type DashboardFeatureId =
+  | "health-score"
+  | "cash-flow"
+  | "task-manager"
+  | "customer-intel"
+  | "marketing-autopilot"
+  | "sales-coach"
+  | "expense-optimizer"
+  | "competitor-radar"
+  | "workflow-builder"
+  | "weekly-brief";
+
+export interface DashboardFeature {
+  id: DashboardFeatureId;
+  title: string;
+  description: string;
+  icon: string;
+  color: string;
+  toolCategories: ToolCategory[];
+  relevantAnswerKeys: string[];
+}
+
+export interface SavedDashboardData {
+  result: StackRecommendation;
+  answers: Record<string, unknown>;
+  savedAt: string;
+}
+
+// --- Employee / Team types ---
+
+export type EmployeeRole =
+  | "marketing"
+  | "sales"
+  | "customer-support"
+  | "operations"
+  | "engineering"
+  | "design"
+  | "finance"
+  | "hr"
+  | "executive"
+  | "content"
+  | "other";
+
+export const EMPLOYEE_ROLE_LABELS: Record<EmployeeRole, string> = {
+  marketing: "Marketing",
+  sales: "Sales",
+  "customer-support": "Customer Support",
+  operations: "Operations",
+  engineering: "Engineering / Dev",
+  design: "Design",
+  finance: "Finance / Accounting",
+  hr: "HR / People Ops",
+  executive: "Executive / Leadership",
+  content: "Content / Media",
+  other: "Other",
+};
+
+export interface EmployeeProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: EmployeeRole;
+  department: string;
+  answers: Record<string, unknown>;
+  recommendedTools: EmployeeToolAssignment[];
+  goals: EmployeeGoal[];
+  activityLog: ActivityEntry[];
+  createdAt: string;
+}
+
+export interface EmployeeToolAssignment {
+  toolId: string;
+  toolName: string;
+  category: ToolCategory;
+  website: string;
+  monthlyCost: number;
+  whyAssigned: string;
+  invited: boolean;
+  invitedAt?: string;
+}
+
+export interface EmployeeGoal {
+  id: string;
+  title: string;
+  description: string;
+  deadline: string;
+  status: "not-started" | "in-progress" | "completed";
+  createdAt: string;
+}
+
+export interface ActivityEntry {
+  id: string;
+  toolName: string;
+  action: string;
+  timestamp: string;
+}
+
+export interface EnterpriseSubscription {
+  toolId: string;
+  toolName: string;
+  website: string;
+  seats: number;
+  seatsUsed: number;
+  monthlyCost: number;
+}
+
+export interface TeamData {
+  employees: EmployeeProfile[];
+  subscriptions: EnterpriseSubscription[];
+}

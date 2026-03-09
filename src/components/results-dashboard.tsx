@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   StackRecommendation,
   ToolCategory,
@@ -27,6 +28,7 @@ import {
   ChevronDown,
   ChevronUp,
   Wrench,
+  LayoutDashboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -201,6 +203,7 @@ export function ResultsDashboard({
   budget,
   onReset,
 }: ResultsDashboardProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("breakdown");
   const {
     analysis,
@@ -239,10 +242,20 @@ export function ResultsDashboard({
             </span>
           </p>
         </div>
-        <Button variant="outline" onClick={onReset} size="sm">
-          <RotateCcw className="h-4 w-4 mr-2" />
-          Start Over
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={onReset} size="sm">
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Start Over
+          </Button>
+          <Button
+            onClick={() => router.push("/dashboard")}
+            size="sm"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <LayoutDashboard className="h-4 w-4 mr-2" />
+            Dashboard
+          </Button>
+        </div>
       </div>
 
       {/* Tab Switcher */}

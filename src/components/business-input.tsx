@@ -17,7 +17,7 @@ import {
 interface BusinessInputProps {
   value: string;
   onChange: (value: string) => void;
-  onSubmit: (combinedText: string, budget: number) => void;
+  onSubmit: (combinedText: string, budget: number, answers: Record<string, unknown>) => void;
   isLoading: boolean;
 }
 
@@ -571,7 +571,7 @@ export function BusinessInput({
     } else {
       const combined = buildBusinessIdea(answers);
       onChange(combined);
-      onSubmit(combined, answers.budget);
+      onSubmit(combined, answers.budget, { ...answers });
     }
   }
 
