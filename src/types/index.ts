@@ -40,6 +40,25 @@ export interface AITool {
   tier: "essential" | "recommended" | "nice-to-have";
   /** Tools in the same competitor group are mutually exclusive — only one will be selected */
   competitorGroup?: string;
+  pros?: string[];
+  cons?: string[];
+  /** Who this tool is ideal for */
+  bestFor?: string;
+  /** When to avoid this tool */
+  avoidIf?: string;
+  /**
+   * Business prerequisites — tool is only recommended when the business meets
+   * at least one of these conditions. If empty/undefined, the tool is universal.
+   *
+   * Values: "ecommerce", "saas", "agency", "marketplace", "physical-products",
+   *         "sales-team", "content-heavy", "enterprise", "has-website",
+   *         "has-app", "b2b", "b2c", "any"
+   */
+  suitableFor?: string[];
+  /**
+   * Business types where this tool should NEVER be recommended.
+   */
+  notSuitableFor?: string[];
 }
 
 export interface CategoryAnalysis {

@@ -151,7 +151,7 @@ export default function AddEmployeePage() {
     }
   }
 
-  function handleNext() {
+  async function handleNext() {
     if (step < totalSteps - 1) {
       setStep(step + 1);
     } else {
@@ -192,7 +192,7 @@ export default function AddEmployeePage() {
         createdAt: new Date().toISOString(),
       };
 
-      addEmployee(employee);
+      await addEmployee(employee);
       router.push(`/dashboard/team/${employee.id}`);
     }
   }

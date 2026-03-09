@@ -1,13 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 import { BusinessInput } from "@/components/business-input";
 import { ResultsDashboard } from "@/components/results-dashboard";
 import { AnalyzeResponse, StackRecommendation } from "@/types";
 import { saveDashboardData } from "@/lib/dashboard-storage";
-import { Layers } from "lucide-react";
+import { Layers, LogOut } from "lucide-react";
 
 export default function Home() {
+  const router = useRouter();
+  const { user, loading: authLoading, signOut } = useAuth();
   const [businessIdea, setBusinessIdea] = useState("");
   const [budget, setBudget] = useState(500);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,6 +24,12 @@ export default function Home() {
     budgetOverride?: number,
     answers?: Record<string, unknown>
   ) {
+    // Require sign-in before generating
+    if (!user) {
+      router.push("/auth");
+      return;
+    }
+
     const idea = ideaOverride || businessIdea;
     const useBudget = budgetOverride ?? budget;
     setBudget(useBudget);
@@ -42,8 +52,8 @@ export default function Home() {
       }
 
       setResult(data.data);
-      // Save to localStorage for the dashboard
-      saveDashboardData(data.data, answers || {});
+      // Save to Supabase for the dashboard
+      await saveDashboardData(data.data, answers || {});
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
@@ -60,13 +70,34 @@ export default function Home() {
     <div className="min-h-screen">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-xl border-b border-border/20 z-50 flex items-center">
-        <div className="max-w-3xl mx-auto px-6 w-full flex items-center">
+        <div className="max-w-3xl mx-auto px-6 w-full flex items-center justify-between">
           <a href="/" className="flex items-center gap-2 group">
             <Layers className="h-5 w-5 text-primary transition-opacity group-hover:opacity-80" />
             <span className="font-display font-bold text-foreground text-base tracking-tight">
               AI<span className="text-primary">Stack</span>
             </span>
           </a>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground font-body hidden sm:block">
+                {user.email}
+              </span>
+              <button
+                onClick={async () => { await signOut(); router.push("/"); }}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground font-body transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => router.push("/auth")}
+              className="px-5 py-2 rounded-full bg-foreground text-background font-body font-semibold text-sm btn-lift"
+            >
+              Sign In
+            </button>
+          )}
         </div>
       </nav>
 

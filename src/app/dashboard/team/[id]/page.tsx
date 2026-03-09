@@ -50,20 +50,19 @@ export default function EmployeeProfilePage() {
   const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
-    const emp = getEmployee(id);
-    setEmployee(emp);
+    getEmployee(id).then(setEmployee);
   }, [id]);
 
-  function refresh() {
-    setEmployee(getEmployee(id));
+  async function refresh() {
+    setEmployee(await getEmployee(id));
   }
 
-  function handleInvite(toolId: string) {
-    inviteToTool(id, toolId);
-    refresh();
+  async function handleInvite(toolId: string) {
+    await inviteToTool(id, toolId);
+    await refresh();
   }
 
-  function handleAddGoal() {
+  async function handleAddGoal() {
     if (!newGoalTitle.trim()) return;
     const goal: EmployeeGoal = {
       id: crypto.randomUUID(),
@@ -73,26 +72,26 @@ export default function EmployeeProfilePage() {
       status: "not-started",
       createdAt: new Date().toISOString(),
     };
-    addGoal(id, goal);
+    await addGoal(id, goal);
     setNewGoalTitle("");
     setNewGoalDeadline("");
     setShowGoalForm(false);
-    refresh();
+    await refresh();
   }
 
-  function handleGoalStatus(goalId: string, status: EmployeeGoal["status"]) {
-    updateGoal(id, goalId, { status });
-    refresh();
+  async function handleGoalStatus(goalId: string, status: EmployeeGoal["status"]) {
+    await updateGoal(id, goalId, { status });
+    await refresh();
   }
 
-  function handleLogActivity(toolName: string) {
-    addActivity(id, {
+  async function handleLogActivity(toolName: string) {
+    await addActivity(id, {
       id: crypto.randomUUID(),
       toolName,
       action: `Used ${toolName}`,
       timestamp: new Date().toISOString(),
     });
-    refresh();
+    await refresh();
   }
 
   function copyEmployeeLink() {

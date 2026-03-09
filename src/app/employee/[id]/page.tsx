@@ -203,8 +203,10 @@ export default function EmployeeDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setEmployee(getEmployee(id));
-    setLoading(false);
+    getEmployee(id).then((emp) => {
+      setEmployee(emp);
+      setLoading(false);
+    });
   }, [id]);
 
   function handleToolClick(toolName: string) {

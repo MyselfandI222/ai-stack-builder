@@ -33,6 +33,70 @@ const TIER_WEIGHTS: Record<AITool["tier"], number> = {
   "nice-to-have": 1,
 };
 
+/**
+ * Map questionnaire business models → internal business type tags.
+ * This allows the optimizer to filter tools by suitability.
+ */
+const BUSINESS_MODEL_TAGS: Record<string, string[]> = {
+  "B2B SaaS": ["saas", "b2b", "has-website", "has-app"],
+  "DTC Ecommerce": ["ecommerce", "b2c", "has-website", "physical-products"],
+  "Agency / Consultancy": ["agency", "b2b", "has-website"],
+  "Marketplace": ["marketplace", "has-website", "has-app", "b2c"],
+  "Service Business": ["b2b", "has-website"],
+  "Content / Media": ["content-heavy", "has-website", "b2c"],
+  "Non-Profit": ["has-website"],
+};
+
+function deriveBusinessTags(analysis: BusinessAnalysis): string[] {
+  const bt = (analysis.businessType || "").trim();
+
+  // Direct match
+  for (const [key, tags] of Object.entries(BUSINESS_MODEL_TAGS)) {
+    if (bt.toLowerCase().includes(key.toLowerCase())) {
+      return tags;
+    }
+  }
+
+  // Fuzzy inference from businessType string
+  const lower = bt.toLowerCase();
+  const tags: string[] = [];
+
+  if (lower.includes("saas") || lower.includes("software")) tags.push("saas", "b2b", "has-website", "has-app");
+  else if (lower.includes("ecommerce") || lower.includes("e-commerce") || lower.includes("dtc") || lower.includes("shop") || lower.includes("store") || lower.includes("retail"))
+    tags.push("ecommerce", "b2c", "has-website", "physical-products");
+  else if (lower.includes("agency") || lower.includes("consult")) tags.push("agency", "b2b", "has-website");
+  else if (lower.includes("marketplace") || lower.includes("platform")) tags.push("marketplace", "has-website", "b2c");
+  else if (lower.includes("media") || lower.includes("content") || lower.includes("creator") || lower.includes("blog") || lower.includes("newsletter"))
+    tags.push("content-heavy", "has-website", "b2c");
+  else if (lower.includes("b2b")) tags.push("b2b", "has-website");
+  else if (lower.includes("b2c")) tags.push("b2c", "has-website");
+  else tags.push("has-website"); // safe default
+
+  return tags;
+}
+
+/**
+ * Check whether a tool is suitable for this business.
+ * - If tool has no suitableFor/notSuitableFor, it's always suitable (universal tools).
+ * - If tool has suitableFor, at least one tag must match the business tags.
+ * - If tool has notSuitableFor, none of those tags should match.
+ */
+function isToolSuitableForBusiness(tool: AITool, businessTags: string[]): boolean {
+  // Check notSuitableFor first — if any tag matches, exclude
+  if (tool.notSuitableFor && tool.notSuitableFor.length > 0) {
+    const excluded = tool.notSuitableFor.some((tag) => businessTags.includes(tag));
+    if (excluded) return false;
+  }
+
+  // If suitableFor is defined, require at least one match
+  if (tool.suitableFor && tool.suitableFor.length > 0) {
+    const hasMatch = tool.suitableFor.some((tag) => businessTags.includes(tag));
+    if (!hasMatch) return false;
+  }
+
+  return true;
+}
+
 interface ScoredTool {
   tool: AITool;
   relevanceScore: number;
@@ -42,8 +106,14 @@ interface ScoredTool {
 
 function scoreToolForBusiness(
   tool: AITool,
-  analysis: BusinessAnalysis
+  analysis: BusinessAnalysis,
+  businessTags: string[]
 ): ScoredTool | null {
+  // Filter out tools that don't fit this business type
+  if (!isToolSuitableForBusiness(tool, businessTags)) {
+    return null;
+  }
+
   const categoryMatch = analysis.categories.find(
     (c) => c.category === tool.category
   );
@@ -147,9 +217,12 @@ export function optimizeStack(
   analysis: BusinessAnalysis,
   budget: number
 ): StackRecommendation {
-  // Step 1: Score all tools against the business analysis
+  // Step 0: Derive business type tags for suitability filtering
+  const businessTags = deriveBusinessTags(analysis);
+
+  // Step 1: Score all tools against the business analysis (with suitability filtering)
   const scoredTools: ScoredTool[] = AI_TOOLS_DATABASE.map((tool) =>
-    scoreToolForBusiness(tool, analysis)
+    scoreToolForBusiness(tool, analysis, businessTags)
   ).filter((st): st is ScoredTool => st !== null);
 
   // Step 2: Group by tier, sort by composite score, then fair-shuffle ties

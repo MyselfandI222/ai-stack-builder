@@ -1,37 +1,43 @@
 import { SavedDashboardData, StackRecommendation } from "@/types";
+import { supabase, getOwnerId } from "./supabase";
 
-const STORAGE_KEY = "aistack-dashboard";
-
-export function saveDashboardData(
+export async function saveDashboardData(
   result: StackRecommendation,
   answers: Record<string, unknown>
-): void {
-  const data: SavedDashboardData = {
+): Promise<void> {
+  const ownerId = await getOwnerId();
+
+  // Upsert: delete old record, insert new one
+  await supabase.from("businesses").delete().eq("owner_id", ownerId);
+
+  await supabase.from("businesses").insert({
+    owner_id: ownerId,
     result,
     answers,
-    savedAt: new Date().toISOString(),
+  });
+}
+
+export async function loadDashboardData(): Promise<SavedDashboardData | null> {
+  const ownerId = await getOwnerId();
+
+  const { data, error } = await supabase
+    .from("businesses")
+    .select("result, answers, created_at")
+    .eq("owner_id", ownerId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    result: data.result as StackRecommendation,
+    answers: data.answers as Record<string, unknown>,
+    savedAt: data.created_at,
   };
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch {
-    // localStorage may be unavailable
-  }
 }
 
-export function loadDashboardData(): SavedDashboardData | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as SavedDashboardData;
-  } catch {
-    return null;
-  }
-}
-
-export function clearDashboardData(): void {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // noop
-  }
+export async function clearDashboardData(): Promise<void> {
+  const ownerId = await getOwnerId();
+  await supabase.from("businesses").delete().eq("owner_id", ownerId);
 }

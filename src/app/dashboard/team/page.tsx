@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 import { getTeamData, deleteEmployee, getSubscriptions, addSubscription, removeSubscription } from "@/lib/team-storage";
 import { EmployeeProfile, EnterpriseSubscription, EMPLOYEE_ROLE_LABELS } from "@/types";
 import { AI_TOOLS_DATABASE } from "@/lib/ai-tools-db";
@@ -24,6 +25,7 @@ import {
 
 export default function TeamPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
   const [subscriptions, setSubscriptions] = useState<EnterpriseSubscription[]>([]);
   const [showSubForm, setShowSubForm] = useState(false);
@@ -32,17 +34,20 @@ export default function TeamPage() {
   const [tab, setTab] = useState<"team" | "subscriptions">("team");
 
   useEffect(() => {
-    const data = getTeamData();
-    setEmployees(data.employees);
-    setSubscriptions(data.subscriptions);
-  }, []);
+    if (authLoading) return;
+    if (!user) { router.push("/auth"); return; }
+    getTeamData().then((data) => {
+      setEmployees(data.employees);
+      setSubscriptions(data.subscriptions);
+    });
+  }, [user, authLoading, router]);
 
-  function handleDelete(id: string) {
-    deleteEmployee(id);
+  async function handleDelete(id: string) {
+    await deleteEmployee(id);
     setEmployees((prev) => prev.filter((e) => e.id !== id));
   }
 
-  function handleAddSubscription() {
+  async function handleAddSubscription() {
     if (!selectedToolId) return;
     const tool = AI_TOOLS_DATABASE.find((t) => t.id === selectedToolId);
     if (!tool) return;
@@ -56,15 +61,15 @@ export default function TeamPage() {
       monthlyCost: tool.monthlyCost * subSeats,
     };
 
-    addSubscription(sub);
+    await addSubscription(sub);
     setSubscriptions((prev) => [...prev, sub]);
     setShowSubForm(false);
     setSelectedToolId("");
     setSubSeats(5);
   }
 
-  function handleRemoveSubscription(toolId: string) {
-    removeSubscription(toolId);
+  async function handleRemoveSubscription(toolId: string) {
+    await removeSubscription(toolId);
     setSubscriptions((prev) => prev.filter((s) => s.toolId !== toolId));
   }
 

@@ -1,16 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { SelectedTool } from "@/types";
 import { formatCurrency } from "@/lib/utils";
-import { ExternalLink, Check } from "lucide-react";
+import { ExternalLink, Check, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, Target, ShieldAlert } from "lucide-react";
 
 interface ToolCardProps {
   tool: SelectedTool;
 }
 
 export function ToolCard({ tool }: ToolCardProps) {
+  const [expanded, setExpanded] = useState(false);
+  const hasProsOrCons = (tool.pros && tool.pros.length > 0) || (tool.cons && tool.cons.length > 0);
+
   const tierColors = {
     essential: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
     recommended: "bg-primary/10 text-primary border-primary/20",
@@ -63,6 +67,77 @@ export function ToolCard({ tool }: ToolCardProps) {
             )}
           </div>
         </div>
+
+        {hasProsOrCons && (
+          <>
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-body w-full"
+            >
+              {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              {expanded ? "Hide" : "Show"} pros & cons
+            </button>
+
+            {expanded && (
+              <div className="mt-3 space-y-3 border-t border-border/20 pt-3">
+                {tool.pros && tool.pros.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <ThumbsUp className="h-3.5 w-3.5 text-emerald-400" />
+                      <span className="text-xs font-semibold text-emerald-400 font-display uppercase tracking-wide">Pros</span>
+                    </div>
+                    <ul className="space-y-1">
+                      {tool.pros.map((pro, i) => (
+                        <li key={i} className="text-xs text-muted-foreground font-body leading-relaxed pl-4 relative before:content-['+'] before:absolute before:left-0 before:text-emerald-400 before:font-semibold">
+                          {pro}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {tool.cons && tool.cons.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <ThumbsDown className="h-3.5 w-3.5 text-red-400" />
+                      <span className="text-xs font-semibold text-red-400 font-display uppercase tracking-wide">Cons</span>
+                    </div>
+                    <ul className="space-y-1">
+                      {tool.cons.map((con, i) => (
+                        <li key={i} className="text-xs text-muted-foreground font-body leading-relaxed pl-4 relative before:content-['-'] before:absolute before:left-0 before:text-red-400 before:font-semibold">
+                          {con}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {(tool.bestFor || tool.avoidIf) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    {tool.bestFor && (
+                      <div className="flex gap-1.5">
+                        <Target className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                        <div>
+                          <span className="text-xs font-semibold text-primary font-display">Best for: </span>
+                          <span className="text-xs text-muted-foreground font-body">{tool.bestFor}</span>
+                        </div>
+                      </div>
+                    )}
+                    {tool.avoidIf && (
+                      <div className="flex gap-1.5">
+                        <ShieldAlert className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="text-xs font-semibold text-amber-400 font-display">Avoid if: </span>
+                          <span className="text-xs text-muted-foreground font-body">{tool.avoidIf}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
       </CardContent>
     </Card>
   );

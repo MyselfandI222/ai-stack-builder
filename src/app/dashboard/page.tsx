@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 import { loadDashboardData } from "@/lib/dashboard-storage";
 import { DASHBOARD_FEATURES } from "@/lib/dashboard-features";
 import {
@@ -376,6 +377,19 @@ const STATUS_LABEL: Record<string, string> = {
 
 // --- Feature Card ---
 
+const GLOW_MAP: Record<string, string> = {
+  emerald: "glow-emerald",
+  cyan: "glow-cyan",
+  indigo: "glow-indigo",
+  violet: "glow-violet",
+  pink: "glow-pink",
+  amber: "glow-amber",
+  orange: "glow-orange",
+  red: "glow-red",
+  sky: "glow-sky",
+  purple: "glow-purple",
+};
+
 function FeatureCard({
   feature,
   tools,
@@ -388,11 +402,12 @@ function FeatureCard({
   const [expanded, setExpanded] = useState(false);
   const Icon = ICON_MAP[feature.icon] || Activity;
   const colors = COLOR_MAP[feature.color] || COLOR_MAP.emerald;
+  const glowClass = GLOW_MAP[feature.color] || "glow-primary";
   const { status, insights, actions } = generateInsights(feature.id, answers, tools);
 
   return (
     <Card
-      className={`border-border/30 bg-card/50 backdrop-blur-sm transition-all duration-300 ${
+      className={`card-glow ${glowClass} border-border/20 bg-card/60 transition-all duration-300 ${
         expanded ? `${colors.border} border` : ""
       }`}
     >
@@ -400,7 +415,7 @@ function FeatureCard({
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
-              <div className={`p-2.5 rounded-xl ${colors.bg}`}>
+              <div className={`p-2.5 rounded-xl ${colors.bg} ring-1 ring-white/5`}>
                 <Icon className={`h-5 w-5 ${colors.text}`} />
               </div>
               <div className="flex-1 min-w-0">
@@ -525,14 +540,18 @@ function FeatureCard({
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<SavedDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const saved = loadDashboardData();
-    setData(saved);
-    setLoading(false);
-  }, []);
+    if (authLoading) return;
+    if (!user) { router.push("/auth"); return; }
+    loadDashboardData().then((saved) => {
+      setData(saved);
+      setLoading(false);
+    });
+  }, [user, authLoading, router]);
 
   if (loading) {
     return (
@@ -620,30 +639,58 @@ export default function DashboardPage() {
 
         {/* Overview Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Card className="border-border/30 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-display font-bold text-emerald-400">{healthScore}%</p>
-              <p className="text-xs text-muted-foreground font-body mt-1">Coverage Score</p>
+          {/* Coverage Score with ring */}
+          <Card className="card-glow glow-emerald border-border/20 bg-card/60">
+            <CardContent className="p-4 flex flex-col items-center">
+              <div className="relative w-16 h-16 mb-2">
+                <svg viewBox="0 0 100 100" className="w-full h-full" style={{ transform: "rotate(-90deg)" }}>
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="hsl(160 84% 44% / 0.1)" strokeWidth="8" />
+                  <circle
+                    cx="50" cy="50" r="42" fill="none"
+                    stroke="hsl(160 84% 44%)" strokeWidth="8" strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 42}`}
+                    strokeDashoffset={`${2 * Math.PI * 42 * (1 - healthScore / 100)}`}
+                    className="transition-all duration-1000 ease-out"
+                  />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-display font-bold text-emerald-400">
+                  {healthScore}%
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground font-body">Coverage</p>
             </CardContent>
           </Card>
-          <Card className="border-border/30 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
+
+          {/* Tools count */}
+          <Card className="card-glow glow-primary border-border/20 bg-card/60">
+            <CardContent className="p-4 flex flex-col items-center justify-center h-full">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-2 ring-1 ring-primary/20">
+                <Zap className="h-5 w-5 text-primary" />
+              </div>
               <p className="text-2xl font-display font-bold text-primary">{selectedTools.length}</p>
-              <p className="text-xs text-muted-foreground font-body mt-1">AI Tools Active</p>
+              <p className="text-xs text-muted-foreground font-body mt-0.5">AI Tools</p>
             </CardContent>
           </Card>
-          <Card className="border-border/30 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
+
+          {/* Monthly cost */}
+          <Card className="card-glow glow-cyan border-border/20 bg-card/60">
+            <CardContent className="p-4 flex flex-col items-center justify-center h-full">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center mb-2 ring-1 ring-cyan-500/20">
+                <DollarSign className="h-5 w-5 text-cyan-400" />
+              </div>
               <p className="text-2xl font-display font-bold text-cyan-400">${totalMonthlyCost}</p>
-              <p className="text-xs text-muted-foreground font-body mt-1">Monthly Cost</p>
+              <p className="text-xs text-muted-foreground font-body mt-0.5">Monthly</p>
             </CardContent>
           </Card>
-          <Card className="border-border/30 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-display font-bold text-amber-400">
-                {DASHBOARD_FEATURES.length}
-              </p>
-              <p className="text-xs text-muted-foreground font-body mt-1">Features Available</p>
+
+          {/* Features */}
+          <Card className="card-glow glow-amber border-border/20 bg-card/60">
+            <CardContent className="p-4 flex flex-col items-center justify-center h-full">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-2 ring-1 ring-amber-500/20">
+                <Sparkles className="h-5 w-5 text-amber-400" />
+              </div>
+              <p className="text-2xl font-display font-bold text-amber-400">{DASHBOARD_FEATURES.length}</p>
+              <p className="text-xs text-muted-foreground font-body mt-0.5">Features</p>
             </CardContent>
           </Card>
         </div>
@@ -653,18 +700,20 @@ export default function DashboardPage() {
           onClick={() => router.push("/dashboard/team")}
           className="w-full text-left"
         >
-          <Card className="border-indigo-500/20 bg-indigo-500/5 backdrop-blur-sm card-hover">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-indigo-500/10">
+          <Card className="card-glow glow-indigo border-indigo-500/20 bg-gradient-to-r from-indigo-500/[0.07] to-violet-500/[0.04]">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3.5 rounded-2xl bg-indigo-500/10 ring-1 ring-indigo-500/20">
                 <Users className="h-6 w-6 text-indigo-400" />
               </div>
               <div className="flex-1">
-                <p className="font-display font-semibold text-foreground">Employee Manager</p>
+                <p className="font-display font-semibold text-foreground text-lg">Employee Manager</p>
                 <p className="text-sm text-muted-foreground font-body">
                   Add employees, assign AI tools, set goals, and track their productivity.
                 </p>
               </div>
-              <ChevronDown className="h-5 w-5 text-muted-foreground rotate-[-90deg]" />
+              <div className="p-2 rounded-xl bg-indigo-500/10">
+                <ChevronDown className="h-5 w-5 text-indigo-400 rotate-[-90deg]" />
+              </div>
             </CardContent>
           </Card>
         </button>
@@ -691,11 +740,16 @@ export default function DashboardPage() {
         </div>
 
         {/* Tool Stack Summary */}
-        <Card className="border-primary/20 bg-primary/5 backdrop-blur-sm">
+        <Card className="card-glow glow-primary border-primary/15 bg-gradient-to-br from-primary/[0.06] to-transparent">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-display flex items-center gap-2">
-              <Zap className="h-4 w-4 text-primary" />
+              <div className="p-1.5 rounded-lg bg-primary/10 ring-1 ring-primary/20">
+                <Zap className="h-4 w-4 text-primary" />
+              </div>
               Your Complete AI Stack
+              <Badge variant="secondary" className="text-[10px] rounded-full ml-1">
+                {selectedTools.length} tools
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -706,10 +760,10 @@ export default function DashboardPage() {
                   href={tool.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/40 border border-border/20 text-sm font-body text-foreground/80 hover:text-foreground hover:border-primary/30 transition-all"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-background/40 border border-border/20 text-sm font-body text-foreground/80 hover:text-foreground hover:border-primary/30 hover:bg-primary/5 transition-all"
                 >
                   {tool.name}
-                  <ExternalLink className="h-3 w-3" />
+                  <ExternalLink className="h-3 w-3 opacity-50" />
                 </a>
               ))}
             </div>
