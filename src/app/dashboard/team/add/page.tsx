@@ -10,6 +10,7 @@ import {
   EMPLOYEE_ROLE_LABELS,
 } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DocumentLinks, ExtractedDocument } from "@/components/document-links";
 import {
   Layers,
   ArrowLeft,
@@ -30,6 +31,7 @@ interface EmpAnswers {
   email: string;
   role: EmployeeRole | "";
   department: string;
+  documents: ExtractedDocument[];
   responsibilities: string;
   dailyTasks: string;
   currentTools: string;
@@ -48,6 +50,7 @@ const INITIAL: EmpAnswers = {
   email: "",
   role: "",
   department: "",
+  documents: [],
   responsibilities: "",
   dailyTasks: "",
   currentTools: "",
@@ -77,6 +80,7 @@ const ALL_STEPS: StepDef[] = [
   { key: "email", title: "What's their email?", subtitle: "For sending tool invites." },
   { key: "role", title: "What's their primary role?", subtitle: "Pick the closest match." },
   { key: "department", title: "What department are they in?", subtitle: "e.g. Marketing, Engineering, Sales..." },
+  { key: "documents", title: "Have any documents about this role?", subtitle: "Paste links to job descriptions, org charts, performance reviews, or anything relevant. We'll extract the info.", optional: true },
   { key: "responsibilities", title: "What are their main responsibilities?", subtitle: "Describe what they do day-to-day." },
   { key: "dailyTasks", title: "What tasks do they repeat daily or weekly?", subtitle: "These are prime candidates for AI automation." },
   { key: "currentTools", title: "What tools do they currently use?", subtitle: "Software, apps, platforms — anything they work with.", optional: true },
@@ -96,7 +100,7 @@ type Depth = "quick" | "standard" | "detailed";
 
 const QUICK_KEYS: StepKey[] = ["name", "email", "role", "department", "responsibilities"];
 const STANDARD_KEYS: StepKey[] = [
-  "name", "email", "role", "department", "responsibilities",
+  "name", "email", "role", "department", "documents", "responsibilities",
   "dailyTasks", "currentTools", "biggestChallenge", "skills",
 ];
 const DETAILED_KEYS: StepKey[] = ALL_STEPS.map((s) => s.key);
@@ -137,6 +141,7 @@ export default function AddEmployeePage() {
       case "email": return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(answers.email);
       case "role": return answers.role !== "";
       case "department": return answers.department.trim().length >= 2;
+      case "documents": return true; // always optional
       case "responsibilities": return answers.responsibilities.trim().length >= 10;
       case "dailyTasks": return answers.dailyTasks.trim().length >= 10;
       case "biggestChallenge": return answers.biggestChallenge.trim().length >= 10;
@@ -152,7 +157,14 @@ export default function AddEmployeePage() {
     } else {
       // Done — create the employee
       const role = answers.role as EmployeeRole;
-      const tools = recommendToolsForEmployee(role, { ...answers });
+      // Merge document text into answers so the recommender can use it
+      const enrichedAnswers = { ...answers } as Record<string, unknown>;
+      if (answers.documents.length > 0) {
+        const docText = answers.documents.map((d) => d.text).join("\n");
+        enrichedAnswers.responsibilities = `${answers.responsibilities}\n\nFrom documents: ${docText}`;
+        enrichedAnswers.dailyTasks = `${answers.dailyTasks}\n\nFrom documents: ${docText}`;
+      }
+      const tools = recommendToolsForEmployee(role, enrichedAnswers);
 
       // Parse goals from the text answer
       const goalTexts = answers.goals
@@ -203,7 +215,9 @@ export default function AddEmployeePage() {
 
   // --- Render helpers ---
 
-  function renderTextInput(key: keyof EmpAnswers, placeholder: string) {
+  type StringKeys = Exclude<keyof EmpAnswers, "documents" | "role">;
+
+  function renderTextInput(key: StringKeys, placeholder: string) {
     return (
       <input
         type="text"
@@ -217,7 +231,7 @@ export default function AddEmployeePage() {
     );
   }
 
-  function renderTextarea(key: keyof EmpAnswers, placeholder: string) {
+  function renderTextarea(key: StringKeys, placeholder: string) {
     return (
       <textarea
         className="w-full resize-y bg-background/50 border border-border/30 rounded-xl p-4 text-base leading-relaxed font-body focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
@@ -231,7 +245,7 @@ export default function AddEmployeePage() {
     );
   }
 
-  function renderSingleSelect(key: keyof EmpAnswers, options: string[]) {
+  function renderSingleSelect(key: StringKeys, options: string[]) {
     return (
       <div className="space-y-2">
         {options.map((option) => (
@@ -275,6 +289,13 @@ export default function AddEmployeePage() {
           </div>
         );
       case "department": return renderTextInput("department", "e.g. Marketing, Engineering, Product...");
+      case "documents":
+        return (
+          <DocumentLinks
+            documents={answers.documents}
+            onChange={(docs) => update("documents", docs)}
+          />
+        );
       case "responsibilities": return renderTextarea("responsibilities", "e.g. Manages paid ad campaigns, writes blog content, tracks marketing KPIs...");
       case "dailyTasks": return renderTextarea("dailyTasks", "e.g. Writes 2-3 social media posts, responds to customer emails, updates CRM with leads...");
       case "currentTools": return renderTextarea("currentTools", "e.g. Google Docs, Slack, HubSpot, Figma, Notion...");

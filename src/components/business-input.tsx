@@ -13,6 +13,7 @@ import {
   Microscope,
   SkipForward,
 } from "lucide-react";
+import { DocumentLinks, ExtractedDocument } from "./document-links";
 
 interface BusinessInputProps {
   value: string;
@@ -23,6 +24,7 @@ interface BusinessInputProps {
 
 interface Answers {
   description: string;
+  documents: ExtractedDocument[];
   businessModel: string;
   businessModelOther: string;
   budget: number;
@@ -50,6 +52,7 @@ interface Answers {
 
 const INITIAL_ANSWERS: Answers = {
   description: "",
+  documents: [],
   businessModel: "",
   businessModelOther: "",
   budget: 500,
@@ -183,6 +186,13 @@ const ALL_STEPS: StepDef[] = [
     subtitle: "Describe it in one or two sentences.",
   },
   {
+    key: "documents",
+    title: "Have any documents to share?",
+    subtitle:
+      "Paste links to business plans, pitch decks, websites, or any document. We'll read them and use the info to give you better results.",
+    optional: true,
+  },
+  {
     key: "businessModel",
     title: "What's your business model?",
     subtitle: "Pick the closest match.",
@@ -309,6 +319,7 @@ type DepthMode = "quick" | "standard" | "detailed";
 
 const QUICK_KEYS: StepKey[] = [
   "description",
+  "documents",
   "businessModel",
   "budget",
   "targetAudience",
@@ -320,6 +331,7 @@ const QUICK_KEYS: StepKey[] = [
 
 const STANDARD_KEYS: StepKey[] = [
   "description",
+  "documents",
   "businessModel",
   "budget",
   "productService",
@@ -339,6 +351,7 @@ const STANDARD_KEYS: StepKey[] = [
 
 const DETAILED_KEYS: StepKey[] = [
   "description",
+  "documents",
   "businessModel",
   "budget",
   "productService",
@@ -478,6 +491,18 @@ function buildBusinessIdea(answers: Answers): string {
     `Monthly AI tool budget: $${answers.budget}.`,
   ];
 
+  // Append extracted document content
+  if (answers.documents.length > 0) {
+    parts.push(
+      "\n\n--- ADDITIONAL CONTEXT FROM PROVIDED DOCUMENTS ---"
+    );
+    for (const doc of answers.documents) {
+      parts.push(
+        `\n[Document: ${doc.title} (${doc.type})]\n${doc.text}`
+      );
+    }
+  }
+
   return parts.filter(Boolean).join(" ");
 }
 
@@ -512,6 +537,8 @@ export function BusinessInput({
     switch (currentStep.key) {
       case "description":
         return answers.description.trim().length >= 10;
+      case "documents":
+        return true; // always optional
       case "businessModel":
         return (
           answers.businessModel !== "" &&
@@ -743,6 +770,14 @@ export function BusinessInput({
     switch (currentStep.key) {
       case "description":
         return renderTextarea("description", "e.g. An online platform that connects freelance designers with small businesses...");
+      case "documents":
+        return (
+          <DocumentLinks
+            documents={answers.documents}
+            onChange={(docs) => update("documents", docs)}
+            disabled={isLoading}
+          />
+        );
       case "businessModel":
         return (
           <div className="space-y-3">
