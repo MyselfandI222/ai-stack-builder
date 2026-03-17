@@ -11,6 +11,8 @@ interface BudgetProgressProps {
   budgetUsedPercent: number;
   isOverBudget: boolean;
   toolCount: number;
+  potentialCost?: number;
+  freeToolCount?: number;
 }
 
 export function BudgetProgress({
@@ -19,6 +21,8 @@ export function BudgetProgress({
   budgetUsedPercent,
   isOverBudget,
   toolCount,
+  potentialCost,
+  freeToolCount,
 }: BudgetProgressProps) {
   const clampedPercent = Math.min(budgetUsedPercent, 100);
   const savings = budget - totalCost;
@@ -92,6 +96,20 @@ export function BudgetProgress({
               </span>
             )}
           </div>
+
+          {potentialCost != null && potentialCost > totalCost && freeToolCount != null && freeToolCount > 0 && (
+            <div className="mt-3 pt-3 border-t border-border/20 flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <span className="text-muted-foreground">
+                  {freeToolCount} tool{freeToolCount > 1 ? "s" : ""} on free tiers.{" "}
+                </span>
+                <span className="text-amber-400 font-medium">
+                  Potential cost at scale: {formatCurrency(potentialCost)}/mo
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

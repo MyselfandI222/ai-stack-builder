@@ -35,6 +35,9 @@ interface Answers {
   topGoal: string;
   biggestChallenge: string;
   stage: string;
+  hasWebsite: string;
+  websiteUrl: string;
+  websiteQuality: string;
   customerAcquisition: string;
   revenueModel: string;
   pricePoint: string;
@@ -63,6 +66,9 @@ const INITIAL_ANSWERS: Answers = {
   topGoal: "",
   biggestChallenge: "",
   stage: "",
+  hasWebsite: "",
+  websiteUrl: "",
+  websiteQuality: "",
   customerAcquisition: "",
   revenueModel: "",
   pricePoint: "",
@@ -84,6 +90,7 @@ const BUSINESS_MODELS = [
   "B2B SaaS",
   "DTC Ecommerce",
   "Agency / Consultancy",
+  "Web Design / Development",
   "Marketplace",
   "Service Business",
   "Content / Media",
@@ -115,6 +122,7 @@ const OPERATIONS = [
   { id: "sales", label: "Sales & CRM" },
   { id: "admin", label: "Admin & Productivity" },
   { id: "analytics", label: "Analytics & Data" },
+  { id: "development", label: "Web Development & Coding" },
 ];
 
 const REVENUE_MODELS = [
@@ -157,6 +165,20 @@ const CONTENT_TYPES = [
   { id: "case-studies", label: "Case Studies" },
   { id: "ads-copy", label: "Ad Copy" },
   { id: "documentation", label: "Docs / Help Center" },
+];
+
+const HAS_WEBSITE_OPTIONS = [
+  "Yes, I have a website",
+  "No, I don't have one yet",
+  "I'm building one right now",
+];
+
+const WEBSITE_QUALITY_OPTIONS = [
+  "Great — modern, fast, converts well",
+  "Decent — works but could be better",
+  "Needs improvement — outdated or slow",
+  "Bad — I know it needs a redesign",
+  "Not sure — I haven't evaluated it",
 ];
 
 const CUSTOMER_COUNTS = [
@@ -236,6 +258,22 @@ const ALL_STEPS: StepDef[] = [
     key: "stage",
     title: "What stage is your business at?",
     subtitle: "Where are you on the journey?",
+  },
+  {
+    key: "hasWebsite",
+    title: "Do you have a website?",
+    subtitle: "We'll tailor recommendations based on your web presence.",
+  },
+  {
+    key: "websiteUrl",
+    title: "What's your website URL?",
+    subtitle: "We can use this to better understand your business.",
+    optional: true,
+  },
+  {
+    key: "websiteQuality",
+    title: "How would you rate your current website?",
+    subtitle: "Be honest — this helps us recommend the right tools.",
   },
   {
     key: "customerAcquisition",
@@ -324,6 +362,7 @@ const QUICK_KEYS: StepKey[] = [
   "budget",
   "targetAudience",
   "teamSize",
+  "hasWebsite",
   "operations",
   "topGoal",
   "biggestChallenge",
@@ -337,6 +376,9 @@ const STANDARD_KEYS: StepKey[] = [
   "productService",
   "targetAudience",
   "teamSize",
+  "hasWebsite",
+  "websiteUrl",
+  "websiteQuality",
   "operations",
   "topGoal",
   "biggestChallenge",
@@ -357,6 +399,9 @@ const DETAILED_KEYS: StepKey[] = [
   "productService",
   "targetAudience",
   "teamSize",
+  "hasWebsite",
+  "websiteUrl",
+  "websiteQuality",
   "operations",
   "topGoal",
   "biggestChallenge",
@@ -457,6 +502,13 @@ function buildBusinessIdea(answers: Answers): string {
       ? `Biggest challenge: ${answers.biggestChallenge.trim()}.`
       : "",
     answers.stage ? `Stage: ${answers.stage}.` : "",
+    answers.hasWebsite ? `Website: ${answers.hasWebsite}.` : "",
+    answers.websiteUrl.trim()
+      ? `Website URL: ${answers.websiteUrl.trim()}.`
+      : "",
+    answers.websiteQuality
+      ? `Website quality: ${answers.websiteQuality}.`
+      : "",
     answers.customerAcquisition.trim()
       ? `Current customer acquisition: ${answers.customerAcquisition.trim()}.`
       : "",
@@ -518,7 +570,14 @@ export function BusinessInput({
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>(INITIAL_ANSWERS);
 
-  const activeStepKeys = depth ? DEPTH_STEPS[depth] : [];
+  const hasWebsite = answers.hasWebsite === "Yes, I have a website";
+  const activeStepKeys = depth
+    ? DEPTH_STEPS[depth].filter((key) => {
+        // Only show websiteUrl and websiteQuality if user has a website
+        if (key === "websiteUrl" || key === "websiteQuality") return hasWebsite;
+        return true;
+      })
+    : [];
   const activeSteps = activeStepKeys.map(
     (key) => ALL_STEPS.find((s) => s.key === key)!
   );
@@ -561,6 +620,12 @@ export function BusinessInput({
         return answers.biggestChallenge.trim().length >= 10;
       case "stage":
         return answers.stage !== "";
+      case "hasWebsite":
+        return answers.hasWebsite !== "";
+      case "websiteUrl":
+        return answers.websiteUrl.trim().length >= 4;
+      case "websiteQuality":
+        return answers.websiteQuality !== "";
       case "customerAcquisition":
         return answers.customerAcquisition.trim().length >= 5;
       case "revenueModel":
@@ -811,6 +876,12 @@ export function BusinessInput({
         return renderTextarea("biggestChallenge", "e.g. Spending too much time on manual tasks, can't figure out marketing, no consistent sales pipeline...");
       case "stage":
         return renderSingleSelect("stage", STAGES, "list");
+      case "hasWebsite":
+        return renderSingleSelect("hasWebsite", HAS_WEBSITE_OPTIONS, "list");
+      case "websiteUrl":
+        return renderTextInput("websiteUrl", "e.g. https://mycompany.com");
+      case "websiteQuality":
+        return renderSingleSelect("websiteQuality", WEBSITE_QUALITY_OPTIONS, "list");
       case "customerAcquisition":
         return renderTextarea("customerAcquisition", "e.g. Mostly word of mouth, some Instagram posts, tried Google Ads but it was too expensive...", "80px");
       case "revenueModel":

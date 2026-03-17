@@ -45,6 +45,7 @@ export function getDemoAnalysis(businessIdea: string): BusinessAnalysis {
   const hasSales = idea.includes("sales") || idea.includes("leads") || idea.includes("crm");
   const hasAdmin = idea.includes("admin") || idea.includes("productivity") || idea.includes("team");
   const hasAnalytics = idea.includes("analytics") || idea.includes("data") || idea.includes("track");
+  const hasDevelopment = idea.includes("website") || idea.includes("web") || idea.includes("code") || idea.includes("developer") || idea.includes("design") || idea.includes("app");
 
   return {
     businessType,
@@ -132,6 +133,18 @@ export function getDemoAnalysis(businessIdea: string): BusinessAnalysis {
           "Set up alerts for anomalies in revenue and traffic",
           "Generate weekly business performance reports",
           "Track cohort retention and lifetime value",
+        ],
+      },
+      {
+        category: "development",
+        relevanceScore: hasDevelopment ? 85 : 40,
+        reasoning:
+          "AI coding tools and website builders can dramatically accelerate web development. Whether you need to build a new site, improve an existing one, or speed up development workflows, AI-powered tools are a game changer.",
+        suggestedTasks: [
+          "Build or redesign business website using AI-powered tools",
+          "Use AI code editors to accelerate development speed",
+          "Generate landing pages and UI components from descriptions",
+          "Deploy and host web applications with modern platforms",
         ],
       },
     ],

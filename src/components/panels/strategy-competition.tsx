@@ -1,0 +1,92 @@
+"use client";
+
+import { SelectedTool, PanelSubSection, CATEGORY_LABELS } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { PanelToolCard } from "@/components/panel-tool-card";
+import {
+  Radar,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Zap,
+  ExternalLink,
+} from "lucide-react";
+
+const SUB_ICONS = [Radar, FileText];
+
+function StatusIcon({ status }: { status: "good" | "warning" | "action" }) {
+  switch (status) {
+    case "good": return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />;
+    case "warning": return <AlertCircle className="h-3.5 w-3.5 text-amber-400" />;
+    case "action": return <Clock className="h-3.5 w-3.5 text-blue-400" />;
+  }
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  good: "On Track", warning: "Needs Attention", action: "Action Required",
+};
+
+interface Props {
+  sections: PanelSubSection[];
+  tools: SelectedTool[];
+}
+
+export function StrategyCompetition({ sections, tools }: Props) {
+  return (
+    <div className="space-y-6">
+      {sections.map((section, idx) => {
+        const Icon = SUB_ICONS[idx] || Radar;
+        return (
+          <Card key={section.label} className="border-border/20 bg-card/60">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-display flex items-center gap-2">
+                <Icon className="h-4 w-4 text-red-400" />
+                {section.label}
+                <div className="flex items-center gap-1 ml-auto">
+                  <StatusIcon status={section.status} />
+                  <span className="text-xs text-muted-foreground font-body">{STATUS_LABEL[section.status]}</span>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                {section.insights.map((insight, i) => (
+                  <div key={i} className="flex items-start gap-2 text-sm text-foreground/80 font-body">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-500/60 shrink-0" />
+                    {insight}
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide font-body">Next Steps</p>
+                {section.actions.map((action, i) => (
+                  <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-background/30 border border-border/20">
+                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-red-500/10 text-red-400 text-[10px] font-bold font-body shrink-0 mt-0.5">
+                      {i + 1}
+                    </span>
+                    <span className="text-sm text-foreground/80 font-body">{action}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      {tools.length > 0 && (
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3 font-body flex items-center gap-2">
+            <Zap className="h-4 w-4 text-red-400" />Tools Powering Strategy
+          </h3>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {tools.map((tool) => (
+              <PanelToolCard key={tool.id} tool={tool} accentColor="red" />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

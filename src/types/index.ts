@@ -5,7 +5,8 @@ export type ToolCategory =
   | "operations"
   | "sales"
   | "admin"
-  | "analytics";
+  | "analytics"
+  | "development";
 
 export const CATEGORY_LABELS: Record<ToolCategory, string> = {
   marketing: "Marketing",
@@ -15,6 +16,7 @@ export const CATEGORY_LABELS: Record<ToolCategory, string> = {
   sales: "Sales",
   admin: "Admin & Productivity",
   analytics: "Analytics & Data",
+  development: "Web Development & Coding",
 };
 
 export const CATEGORY_ICONS: Record<ToolCategory, string> = {
@@ -25,6 +27,7 @@ export const CATEGORY_ICONS: Record<ToolCategory, string> = {
   sales: "TrendingUp",
   admin: "FolderKanban",
   analytics: "BarChart3",
+  development: "Code2",
 };
 
 export interface AITool {
@@ -124,6 +127,7 @@ export interface StackRecommendation {
 export interface AnalyzeRequest {
   businessIdea: string;
   budget: number;
+  answers?: Record<string, unknown>;
 }
 
 export interface AnalyzeResponse {
@@ -132,22 +136,29 @@ export interface AnalyzeResponse {
   error?: string;
 }
 
+export interface ToolRanking {
+  toolId: string;
+  score: number;
+  reason: string;
+}
+
 // --- Dashboard types ---
 
-export type DashboardFeatureId =
-  | "health-score"
-  | "cash-flow"
-  | "task-manager"
-  | "customer-intel"
-  | "marketing-autopilot"
-  | "sales-coach"
-  | "expense-optimizer"
-  | "competitor-radar"
-  | "workflow-builder"
-  | "weekly-brief";
+export type DashboardPanelId =
+  | "operations-overview"
+  | "growth-marketing"
+  | "automation-hub"
+  | "strategy-competition";
 
-export interface DashboardFeature {
-  id: DashboardFeatureId;
+export interface PanelSubSection {
+  label: string;
+  status: "good" | "warning" | "action";
+  insights: string[];
+  actions: string[];
+}
+
+export interface DashboardPanel {
+  id: DashboardPanelId;
   title: string;
   description: string;
   icon: string;
@@ -156,11 +167,33 @@ export interface DashboardFeature {
   relevantAnswerKeys: string[];
 }
 
+export interface BusinessPlanEdits {
+  executiveSummary?: string;
+  revenueStrategy?: string;
+  growthStrategy?: string;
+  teamRecommendations?: string;
+}
+
 export interface SavedDashboardData {
+  id: string;
   result: StackRecommendation;
   answers: Record<string, unknown>;
   savedAt: string;
+  planEdits?: BusinessPlanEdits;
 }
+
+export interface ProjectSummary {
+  id: string;
+  businessType: string;
+  toolCount: number;
+  monthlyCost: number;
+  createdAt: string;
+}
+
+/** @deprecated Use DashboardPanelId instead */
+export type DashboardFeatureId = DashboardPanelId;
+/** @deprecated Use DashboardPanel instead */
+export type DashboardFeature = DashboardPanel;
 
 // --- Employee / Team types ---
 

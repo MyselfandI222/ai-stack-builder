@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { analyzeBusinessIdea } from "@/lib/ai-analyzer";
+import { analyzeBusinessIdea, rankToolsForBusiness } from "@/lib/ai-analyzer";
 import { getDemoAnalysis } from "@/lib/demo-analysis";
 import { optimizeStack } from "@/lib/budget-optimizer";
 import { AnalyzeRequest, AnalyzeResponse } from "@/types";
@@ -33,10 +33,25 @@ export async function POST(request: NextRequest) {
     // Step 1: Get analysis — real AI or demo fallback
     const analysis = isDemoMode
       ? getDemoAnalysis(body.businessIdea)
-      : await analyzeBusinessIdea(body.businessIdea);
+      : await analyzeBusinessIdea(body.businessIdea, body.answers);
 
-    // Step 2: Run the budget optimization algorithm
-    const recommendation = optimizeStack(analysis, body.budget);
+    // Step 2: Claude ranks specific tools for this business (skipped in demo mode)
+    let claudeToolRankings;
+    if (!isDemoMode && body.answers) {
+      try {
+        claudeToolRankings = await rankToolsForBusiness(analysis, body.budget, body.answers);
+      } catch (err) {
+        console.error("Tool ranking pass failed, falling back to algorithm-only:", err);
+      }
+    }
+
+    // Step 3: Run the budget optimization algorithm with full context
+    const recommendation = optimizeStack(analysis, body.budget, {
+      currentTools: String(body.answers?.currentTools || ""),
+      stage: String(body.answers?.stage || ""),
+      automateFirst: String(body.answers?.automateFirst || ""),
+      claudeToolRankings,
+    });
 
     return NextResponse.json<AnalyzeResponse>({
       success: true,

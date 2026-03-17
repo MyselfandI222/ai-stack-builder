@@ -14,13 +14,24 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "AI Stack Builder — Build Your AI-Powered Business Stack",
+  title: "AI Tool Planner — Your AI-Powered Business Stack, Built in One Conversation",
   description:
-    "Type your startup idea and instantly get a curated AI automation stack under your budget. Built for solopreneurs, founders, and agency owners.",
+    "Talk to Elliot, our AI consultant. In five minutes get a custom business plan, budget-optimized AI tool stack, and 90-day action plan. Built for founders, agencies, and solopreneurs.",
+  icons: {
+    icon: "/favicon.svg",
+  },
   openGraph: {
-    title: "AI Stack Builder",
-    description: "Type your startup idea → get a curated AI automation stack under your budget.",
+    title: "AI Tool Planner — Build Your AI Business Stack",
+    description:
+      "One voice conversation. A complete AI-powered business plan and tool stack, custom-fit to your goals and budget.",
     type: "website",
+    siteName: "AI Tool Planner",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AI Tool Planner — Build Your AI Business Stack",
+    description:
+      "Talk to Elliot, our AI consultant. Get a custom business plan and optimized tool stack in five minutes.",
   },
 };
 

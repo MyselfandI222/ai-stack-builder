@@ -5,6 +5,7 @@ import {
   SelectedTool,
   StackRecommendation,
   ToolCategory,
+  ToolRanking,
 } from "@/types";
 import { AI_TOOLS_DATABASE } from "./ai-tools-db";
 
@@ -32,6 +33,33 @@ const TIER_WEIGHTS: Record<AITool["tier"], number> = {
   recommended: 2,
   "nice-to-have": 1,
 };
+
+/** Stage-aware tier weights — early-stage businesses lean essential + free, established get a wider spread. */
+const STAGE_TIER_WEIGHTS: Record<string, Record<AITool["tier"], number>> = {
+  "Just an idea":                   { essential: 4, recommended: 1.5, "nice-to-have": 0.5 },
+  "Pre-launch / building":         { essential: 3.5, recommended: 1.5, "nice-to-have": 0.5 },
+  "Just launched (< 6 months)":    { essential: 3, recommended: 2, "nice-to-have": 1 },
+  "Growing (6 months - 2 years)":  { essential: 2.5, recommended: 2.5, "nice-to-have": 1.5 },
+  "Established (2+ years)":        { essential: 2, recommended: 2.5, "nice-to-have": 2 },
+};
+
+export interface OptimizationContext {
+  currentTools?: string;
+  stage?: string;
+  automateFirst?: string;
+  claudeToolRankings?: ToolRanking[];
+}
+
+/** Check if the user already uses a tool (fuzzy name match against their "currentTools" answer). */
+function userAlreadyHas(tool: AITool, currentTools: string): boolean {
+  if (!currentTools) return false;
+  const lower = currentTools.toLowerCase();
+  // Strip common suffixes like "AI" or ".com" for matching
+  const toolName = tool.name.toLowerCase().replace(/\s*(ai|\.com)\s*$/g, "").trim();
+  // Also try just the first word (e.g. "HubSpot" from "HubSpot AI")
+  const firstName = toolName.split(/\s+/)[0];
+  return lower.includes(toolName) || (firstName.length > 3 && lower.includes(firstName));
+}
 
 /**
  * Map questionnaire business models → internal business type tags.
@@ -107,10 +135,16 @@ interface ScoredTool {
 function scoreToolForBusiness(
   tool: AITool,
   analysis: BusinessAnalysis,
-  businessTags: string[]
+  businessTags: string[],
+  context: OptimizationContext = {}
 ): ScoredTool | null {
   // Filter out tools that don't fit this business type
   if (!isToolSuitableForBusiness(tool, businessTags)) {
+    return null;
+  }
+
+  // Filter out tools the user already has
+  if (context.currentTools && userAlreadyHas(tool, context.currentTools)) {
     return null;
   }
 
@@ -138,20 +172,47 @@ function scoreToolForBusiness(
 
   const freeTierBonus = tool.hasFreeTier ? 10 : 0;
 
+  // Bonus for tools matching what the user wants to automate first
+  const automateText = (context.automateFirst || "").toLowerCase();
+  const automateBonus =
+    automateText.length > 0 &&
+    tool.useCaseTags.some(
+      (tag) =>
+        automateText.includes(tag.toLowerCase()) ||
+        tag
+          .toLowerCase()
+          .split(" ")
+          .some((word) => word.length > 3 && automateText.includes(word))
+    )
+      ? 15
+      : 0;
+
   const adjustedRelevance = Math.min(
-    relevanceScore + tagBonus + freeTierBonus,
+    relevanceScore + tagBonus + freeTierBonus + automateBonus,
     100
   );
 
   const effectiveCost = Math.max(tool.monthlyCost, 1);
-  const tierWeight = TIER_WEIGHTS[tool.tier];
-  const compositeScore = (adjustedRelevance * tierWeight) / effectiveCost;
 
-  const whyRecommended = generateRecommendationReason(
-    tool,
-    categoryMatch,
-    analysis
+  // Stage-aware tier weights — early businesses lean essential, established get broader
+  const stageWeights = context.stage
+    ? STAGE_TIER_WEIGHTS[context.stage] || TIER_WEIGHTS
+    : TIER_WEIGHTS;
+  const tierWeight = stageWeights[tool.tier];
+
+  // Claude ranking multiplier (1.0 = neutral when no ranking exists)
+  const claudeRanking = context.claudeToolRankings?.find(
+    (r) => r.toolId === tool.id
   );
+  const claudeMultiplier = claudeRanking ? claudeRanking.score / 50 : 1;
+
+  const compositeScore =
+    (adjustedRelevance * tierWeight * claudeMultiplier) / effectiveCost;
+
+  // Prefer Claude's business-specific reasoning when available
+  const whyRecommended =
+    claudeRanking?.reason ||
+    generateRecommendationReason(tool, categoryMatch, analysis);
 
   return {
     tool,
@@ -215,14 +276,15 @@ function fairShuffle(tools: ScoredTool[]): ScoredTool[] {
 
 export function optimizeStack(
   analysis: BusinessAnalysis,
-  budget: number
+  budget: number,
+  context: OptimizationContext = {}
 ): StackRecommendation {
   // Step 0: Derive business type tags for suitability filtering
   const businessTags = deriveBusinessTags(analysis);
 
   // Step 1: Score all tools against the business analysis (with suitability filtering)
   const scoredTools: ScoredTool[] = AI_TOOLS_DATABASE.map((tool) =>
-    scoreToolForBusiness(tool, analysis, businessTags)
+    scoreToolForBusiness(tool, analysis, businessTags, context)
   ).filter((st): st is ScoredTool => st !== null);
 
   // Step 2: Group by tier, sort by composite score, then fair-shuffle ties

@@ -11,6 +11,7 @@ import {
   TrendingUp,
   FolderKanban,
   BarChart3,
+  Code2,
 } from "lucide-react";
 
 const CATEGORY_ICON_MAP: Record<ToolCategory, React.ElementType> = {
@@ -21,6 +22,7 @@ const CATEGORY_ICON_MAP: Record<ToolCategory, React.ElementType> = {
   sales: TrendingUp,
   admin: FolderKanban,
   analytics: BarChart3,
+  development: Code2,
 };
 
 const CATEGORY_COLORS: Record<ToolCategory, string> = {
@@ -31,6 +33,7 @@ const CATEGORY_COLORS: Record<ToolCategory, string> = {
   sales: "text-emerald-400",
   admin: "text-orange-400",
   analytics: "text-cyan-400",
+  development: "text-indigo-400",
 };
 
 interface CategorySectionProps {

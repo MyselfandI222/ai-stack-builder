@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch(fetchUrl, {
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (compatible; AIStackBuilder/1.0; Document Extractor)",
+          "Mozilla/5.0 (compatible; AIToolPlanner/1.0; Document Extractor)",
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7",
       },
       redirect: "follow",

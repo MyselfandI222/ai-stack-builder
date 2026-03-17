@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { SelectedTool } from "@/types";
 import { formatCurrency } from "@/lib/utils";
+import { getToolTutorial } from "@/lib/tool-tutorials";
+import { ToolTutorialSection } from "./tool-tutorial";
 import { ExternalLink, Check, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, Target, ShieldAlert } from "lucide-react";
 
 interface ToolCardProps {
@@ -14,6 +16,7 @@ interface ToolCardProps {
 export function ToolCard({ tool }: ToolCardProps) {
   const [expanded, setExpanded] = useState(false);
   const hasProsOrCons = (tool.pros && tool.pros.length > 0) || (tool.cons && tool.cons.length > 0);
+  const tutorial = getToolTutorial(tool.id);
 
   const tierColors = {
     essential: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
@@ -56,14 +59,30 @@ export function ToolCard({ tool }: ToolCardProps) {
                   {tag}
                 </Badge>
               ))}
+              {tutorial && (
+                <Badge variant="outline" className="bg-primary/5 text-primary/70 border-primary/15 rounded-full font-body">
+                  Setup guide
+                </Badge>
+              )}
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className="text-lg font-display font-bold text-foreground tabular-nums">
-              {tool.monthlyCost === 0 ? "Free" : formatCurrency(tool.monthlyCost)}
-            </div>
-            {tool.monthlyCost > 0 && (
-              <div className="text-xs text-muted-foreground font-body">/mo</div>
+            {tool.hasFreeTier && tool.monthlyCost > 0 ? (
+              <>
+                <div className="text-lg font-display font-bold text-emerald-400 tabular-nums">Free</div>
+                <div className="text-xs text-muted-foreground font-body">
+                  up to {formatCurrency(tool.monthlyCost)}/mo
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-lg font-display font-bold text-foreground tabular-nums">
+                  {tool.monthlyCost === 0 ? "Free" : formatCurrency(tool.monthlyCost)}
+                </div>
+                {tool.monthlyCost > 0 && (
+                  <div className="text-xs text-muted-foreground font-body">/mo</div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -137,6 +156,11 @@ export function ToolCard({ tool }: ToolCardProps) {
               </div>
             )}
           </>
+        )}
+
+        {/* Tutorial section — only shows for tools with setup guides */}
+        {tutorial && (
+          <ToolTutorialSection tutorial={tutorial} toolName={tool.name} />
         )}
       </CardContent>
     </Card>
