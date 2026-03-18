@@ -85,16 +85,24 @@ export default function GeneratingPage() {
       return;
     }
 
-    const businessIdea = String(params.description || "");
-    const budget = Number(params.budget) || 500;
-    const { description: _d, budget: _b, ...answers } = params;
+    const businessIdea = String(
+      params.description || params.businessIdea || params.business_description || params.businessType || params.business || ""
+    ).trim();
+    const budget = Number(params.budget || params.monthlyBudget || params.monthly_budget) || 500;
+    const { description: _d, budget: _b, businessIdea: _bi, business_description: _bd, businessType: _bt, business: _bus, monthlyBudget: _mb, monthly_budget: _mbu, ...answers } = params;
 
     (async () => {
       try {
         const response = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ businessIdea, budget, answers }),
+          body: JSON.stringify({
+            businessIdea: businessIdea.length >= 20
+              ? businessIdea
+              : "Small business looking for AI tools to automate operations, improve productivity, and grow revenue efficiently",
+            budget,
+            answers,
+          }),
         });
 
         const data: AnalyzeResponse = await response.json();
