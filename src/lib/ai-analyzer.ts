@@ -30,7 +30,7 @@ You MUST respond with valid JSON only. No markdown, no explanation, no text outs
 
 The JSON must follow this exact schema:
 {
-  "businessType": "string (e.g. 'B2B SaaS', 'DTC Ecommerce', 'Agency', 'Marketplace')",
+  "businessType": "string — classify precisely. Examples: 'B2B SaaS', 'DTC Ecommerce', 'Digital Agency', 'Web Development Agency', 'Real Estate Investment', 'Real Estate Brokerage', 'Marketplace', 'Freelance/Solo Service', 'Content Creator', 'E-learning / Online Course', 'Healthcare Practice', 'Restaurant / Food Service', 'Construction / Trades', 'Legal Services', 'Financial Services', 'Retail / Brick-and-Mortar', 'Non-Profit', 'Logistics / Fulfillment'. Pick the MOST SPECIFIC type that matches. Do NOT default to 'Professional Services / Consulting' unless that is genuinely the best fit. A web design company is a 'Web Development Agency', not 'Professional Services'. A real estate investor is 'Real Estate Investment', not 'Consulting'.",
   "businessSummary": "string (2-3 sentence summary of the business and its position)",
   "categories": [
     {

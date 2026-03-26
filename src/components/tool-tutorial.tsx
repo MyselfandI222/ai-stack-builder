@@ -1,9 +1,60 @@
 "use client";
 
 import { useState } from "react";
-import { TutorialStep, ToolTutorial } from "@/lib/tool-tutorials";
+import { TutorialStep, TutorialSubstep, ToolTutorial } from "@/lib/tool-tutorials";
+
+/**
+ * Auto-generates substeps from a step's description when none are manually defined.
+ * Splits on sentence boundaries and common instruction patterns.
+ */
+function generateSubsteps(step: TutorialStep): TutorialSubstep[] {
+  const desc = step.description;
+
+  // Split on periods, "then", and "→" which are used as step separators
+  const parts = desc
+    .split(/(?:\.\s+)|(?:\s+→\s+)|(?:\.\s*$)|(?:\s+[Tt]hen\s+)/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 5);
+
+  if (parts.length <= 1) {
+    // Single sentence — try splitting on commas for multi-action sentences
+    // e.g. "Enter your email, create a password, and click Sign Up"
+    const commaParts = desc
+      .split(/,\s+(?:and\s+)?|,\s+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 5);
+
+    if (commaParts.length > 1) {
+      return commaParts.map((text) => ({
+        text: text.charAt(0).toUpperCase() + text.slice(1),
+        action: inferAction(text),
+      }));
+    }
+
+    // Can't break it down further
+    return [];
+  }
+
+  return parts.map((text) => ({
+    text: text.charAt(0).toUpperCase() + text.slice(1),
+    action: inferAction(text),
+  }));
+}
+
+function inferAction(text: string): TutorialSubstep["action"] {
+  const lower = text.toLowerCase();
+  if (/\b(go to|open|visit|navigate|browse|scroll)\b/.test(lower)) return "navigate";
+  if (/\b(click|press|tap|hit|select a |choose a |pick)\b/.test(lower)) return "click";
+  if (/\b(type|enter|fill|write|paste|input|name your)\b/.test(lower)) return "type";
+  if (/\b(select|choose|pick from|dropdown|from the)\b/.test(lower)) return "select";
+  if (/\b(toggle|enable|turn on|switch|activate)\b/.test(lower)) return "toggle";
+  if (/\b(wait|loading|processing|takes a)\b/.test(lower)) return "wait";
+  if (/\b(verify|check|confirm|make sure|you'll see|look for)\b/.test(lower)) return "verify";
+  return undefined;
+}
 import {
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   ExternalLink,
   MousePointerClick,
@@ -74,12 +125,33 @@ interface ToolTutorialProps {
 export function ToolTutorialSection({ tutorial, toolName }: ToolTutorialProps) {
   const [expanded, setExpanded] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [expandedSubsteps, setExpandedSubsteps] = useState<Set<number>>(new Set());
+  const [completedSubsteps, setCompletedSubsteps] = useState<Set<string>>(new Set());
 
   function toggleStep(index: number) {
     setCompletedSteps((prev) => {
       const next = new Set(prev);
       if (next.has(index)) next.delete(index);
       else next.add(index);
+      return next;
+    });
+  }
+
+  function toggleSubstepsExpanded(index: number) {
+    setExpandedSubsteps((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }
+
+  function toggleSubstep(stepIndex: number, subIndex: number) {
+    const key = `${stepIndex}-${subIndex}`;
+    setCompletedSubsteps((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }
@@ -203,6 +275,81 @@ export function ToolTutorialSection({ tutorial, toolName }: ToolTutorialProps) {
                           </span>
                         </div>
                       )}
+
+                      {/* Expandable substeps — use manual if available, auto-generate otherwise */}
+                      {(() => {
+                        if (isCompleted) return null;
+                        const subs = step.substeps && step.substeps.length > 0
+                          ? step.substeps
+                          : generateSubsteps(step);
+                        if (subs.length === 0) return null;
+
+                        return (
+                          <div className="mt-2">
+                            <button
+                              onClick={() => toggleSubstepsExpanded(index)}
+                              className="flex items-center gap-1 text-[11px] font-medium text-primary/70 hover:text-primary transition-colors font-body"
+                            >
+                              <ChevronRight
+                                className={`h-3 w-3 transition-transform duration-200 ${
+                                  expandedSubsteps.has(index) ? "rotate-90" : ""
+                                }`}
+                              />
+                              {expandedSubsteps.has(index) ? "Hide" : "Show"} detailed steps ({subs.length})
+                            </button>
+
+                            {expandedSubsteps.has(index) && (
+                              <div className="mt-1.5 ml-1 space-y-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                                {subs.map((sub, subIdx) => {
+                                  const subKey = `${index}-${subIdx}`;
+                                  const subDone = completedSubsteps.has(subKey);
+                                  const subConfig = sub.action ? ACTION_CONFIG[sub.action] : null;
+
+                                  return (
+                                    <div
+                                      key={subIdx}
+                                      className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg transition-all ${
+                                        subDone
+                                          ? "bg-emerald-500/5"
+                                          : "bg-background/20 hover:bg-background/40"
+                                      }`}
+                                    >
+                                      <button
+                                        onClick={() => toggleSubstep(index, subIdx)}
+                                        className={`shrink-0 flex items-center justify-center w-4 h-4 rounded-full text-[8px] font-bold font-display mt-0.5 transition-all ${
+                                          subDone
+                                            ? "bg-emerald-500/20 text-emerald-400"
+                                            : "bg-card/60 border border-border/30 text-muted-foreground/60 hover:border-primary/40"
+                                        }`}
+                                      >
+                                        {subDone ? (
+                                          <CheckCircle2 className="h-2.5 w-2.5" />
+                                        ) : (
+                                          <span className="text-[7px]">{subIdx + 1}</span>
+                                        )}
+                                      </button>
+                                      <span
+                                        className={`text-[11px] font-body leading-relaxed flex-1 ${
+                                          subDone
+                                            ? "text-muted-foreground/40 line-through"
+                                            : "text-muted-foreground/80"
+                                        }`}
+                                      >
+                                        {sub.text}
+                                      </span>
+                                      {subConfig && !subDone && (
+                                        <span className={`shrink-0 text-[8px] font-bold uppercase tracking-wider ${subConfig.color} opacity-50`}>
+                                          {subConfig.label}
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

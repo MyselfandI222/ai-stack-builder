@@ -3,6 +3,11 @@
  * Only tools where account creation / AI setup is involved get tutorials.
  */
 
+export interface TutorialSubstep {
+  text: string;
+  action?: "navigate" | "click" | "type" | "select" | "toggle" | "wait" | "verify";
+}
+
 export interface TutorialStep {
   title: string;
   description: string;
@@ -10,6 +15,8 @@ export interface TutorialStep {
   action: "navigate" | "click" | "type" | "select" | "toggle" | "wait" | "verify";
   /** Optional helpful tip */
   tip?: string;
+  /** Optional microsteps that break this step down further */
+  substeps?: TutorialSubstep[];
 }
 
 export interface ToolTutorial {
@@ -36,39 +43,88 @@ export const TOOL_TUTORIALS: Record<string, ToolTutorial> = {
         title: "Go to HubSpot signup",
         description: "Open hubspot.com and click the orange \"Get started free\" button in the top-right corner.",
         action: "navigate",
+        substeps: [
+          { text: "Open your browser and go to hubspot.com", action: "navigate" },
+          { text: "Look for the orange \"Get started free\" button in the top-right", action: "click" },
+          { text: "You'll be redirected to the signup page", action: "wait" },
+        ],
       },
       {
         title: "Create your account",
         description: "Enter your email address. You can also sign up with Google or Microsoft. Click \"Next\".",
         action: "type",
         tip: "Use your business email — HubSpot uses it to auto-detect your company.",
+        substeps: [
+          { text: "Type your email address in the email field", action: "type" },
+          { text: "Or click \"Sign up with Google\" / \"Sign up with Microsoft\" to use an existing account", action: "click" },
+          { text: "Create a strong password (8+ characters, include a number)", action: "type" },
+          { text: "Click \"Next\" to continue", action: "click" },
+        ],
       },
       {
         title: "Fill in your details",
         description: "Enter your first name, last name, and company name. Select your industry and company size from the dropdowns.",
         action: "type",
+        substeps: [
+          { text: "Enter your first name", action: "type" },
+          { text: "Enter your last name", action: "type" },
+          { text: "Type your company name", action: "type" },
+          { text: "Select your industry from the dropdown", action: "select" },
+          { text: "Select your company size from the dropdown", action: "select" },
+          { text: "Click \"Next\" to proceed", action: "click" },
+        ],
       },
       {
         title: "Choose the Free CRM plan",
         description: "On the plan selection screen, select \"Free Tools\" at the bottom. This gives you the CRM, email marketing, and basic forms.",
         action: "click",
         tip: "You can upgrade later — the free tier is powerful enough to get started.",
+        substeps: [
+          { text: "Scroll down past the paid plans", action: "navigate" },
+          { text: "Find the \"Free Tools\" option at the bottom of the page", action: "navigate" },
+          { text: "Click \"Get started\" under Free Tools", action: "click" },
+          { text: "Confirm your selection if prompted", action: "click" },
+        ],
       },
       {
         title: "Set up your first contact list",
         description: "HubSpot will walk you through importing contacts. You can import a CSV, connect Gmail/Outlook, or start from scratch.",
         action: "click",
+        substeps: [
+          { text: "Choose your import method: CSV file, Gmail sync, Outlook sync, or start empty", action: "select" },
+          { text: "If importing a CSV: click \"Upload file\" and select your contacts spreadsheet", action: "click" },
+          { text: "If connecting email: click \"Connect\" and authorize your email account", action: "click" },
+          { text: "Map your columns (name, email, phone) to HubSpot fields", action: "select" },
+          { text: "Click \"Import\" and wait for it to finish", action: "wait" },
+        ],
       },
       {
         title: "Enable Breeze AI",
         description: "Go to Settings (gear icon) → Breeze AI in the left sidebar. Toggle on the AI features you want — Content Agent, Prospecting Agent, or Customer Agent.",
         action: "toggle",
         tip: "Breeze AI features require a Professional plan ($100/seat/mo) for full access.",
+        substeps: [
+          { text: "Click the gear icon (Settings) in the top navigation bar", action: "click" },
+          { text: "In the left sidebar, find and click \"Breeze AI\"", action: "click" },
+          { text: "You'll see toggles for Content Agent, Prospecting Agent, and Customer Agent", action: "navigate" },
+          { text: "Toggle on each AI feature you want to enable", action: "toggle" },
+          { text: "Click \"Save\" to apply your changes", action: "click" },
+        ],
       },
       {
         title: "Create your first email campaign",
         description: "Navigate to Marketing → Email in the top nav. Click \"Create email\" and choose a template. The AI assistant will help you write subject lines and body copy.",
         action: "click",
+        substeps: [
+          { text: "Click \"Marketing\" in the top navigation bar", action: "click" },
+          { text: "Select \"Email\" from the dropdown menu", action: "click" },
+          { text: "Click the \"Create email\" button", action: "click" },
+          { text: "Browse and select a template that fits your needs", action: "select" },
+          { text: "Click the AI icon to generate subject line suggestions", action: "click" },
+          { text: "Edit the email body — use the AI assistant button to help write copy", action: "type" },
+          { text: "Select your recipients from your contact list", action: "select" },
+          { text: "Click \"Review and send\" or \"Schedule\" when ready", action: "click" },
+        ],
       },
     ],
     videos: [
@@ -87,33 +143,73 @@ export const TOOL_TUTORIALS: Record<string, ToolTutorial> = {
         title: "Go to Mailchimp signup",
         description: "Open mailchimp.com and click \"Sign Up Free\" in the top-right corner.",
         action: "navigate",
+        substeps: [
+          { text: "Open your browser and go to mailchimp.com", action: "navigate" },
+          { text: "Click \"Sign Up Free\" in the top-right corner", action: "click" },
+        ],
       },
       {
         title: "Create your account",
         description: "Enter your email, username, and password. Click \"Sign Up\". Check your inbox for a verification email and click the activation link.",
         action: "type",
+        substeps: [
+          { text: "Enter your email address", action: "type" },
+          { text: "Choose a username", action: "type" },
+          { text: "Create a password (one uppercase, one lowercase, one number, one special character, 8+ characters)", action: "type" },
+          { text: "Click \"Sign Up\"", action: "click" },
+          { text: "Open your email inbox and find the email from Mailchimp", action: "navigate" },
+          { text: "Click the activation link in the email", action: "click" },
+        ],
       },
       {
         title: "Choose the Free plan",
         description: "Select \"Free\" on the pricing page. This gives you 250 contacts and 500 emails/month to start.",
         action: "click",
         tip: "The Standard plan ($20/mo) unlocks the AI Creative Assistant and Customer Journey Builder.",
+        substeps: [
+          { text: "Review the plan options shown on screen", action: "navigate" },
+          { text: "Click \"Continue with Free\" at the bottom", action: "click" },
+        ],
       },
       {
         title: "Set up your audience",
         description: "Mailchimp will ask about your business. Fill in your business name, website URL, and address (required by law for email marketing).",
         action: "type",
+        substeps: [
+          { text: "Enter your business or organization name", action: "type" },
+          { text: "Enter your website URL (or social media link if no website)", action: "type" },
+          { text: "Enter your physical mailing address (required by CAN-SPAM law)", action: "type" },
+          { text: "Select your industry from the dropdown", action: "select" },
+          { text: "Click \"Continue\" to finish setup", action: "click" },
+        ],
       },
       {
         title: "Import your contacts",
         description: "Go to Audience → Manage Audience → Import Contacts. Upload a CSV or connect an integration (Shopify, WooCommerce, etc).",
         action: "click",
+        substeps: [
+          { text: "Click \"Audience\" in the left sidebar", action: "click" },
+          { text: "Click \"Manage Audience\" dropdown at the top", action: "click" },
+          { text: "Select \"Import Contacts\"", action: "click" },
+          { text: "Choose your source: CSV/TXT file, copy/paste, or integration", action: "select" },
+          { text: "If CSV: click \"Browse\" and select your file, then map columns", action: "click" },
+          { text: "If integration: select your platform (Shopify, WooCommerce, etc.) and authorize", action: "click" },
+          { text: "Click \"Import\" and wait for processing", action: "wait" },
+        ],
       },
       {
         title: "Use AI Creative Assistant",
         description: "When creating a new campaign, click \"Creative Assistant\" in the email builder. It generates brand-consistent layouts from your logo and website colors.",
         action: "click",
         tip: "Upload your brand logo first in Settings → Brand for better AI results.",
+        substeps: [
+          { text: "Go to Campaigns → Create Campaign → Email", action: "click" },
+          { text: "Choose a blank template or start from a layout", action: "select" },
+          { text: "In the email editor, look for the \"Creative Assistant\" button", action: "navigate" },
+          { text: "Click it to open the AI design tool", action: "click" },
+          { text: "Select a style and color scheme — the AI generates brand-consistent layouts", action: "select" },
+          { text: "Pick a generated design and customize the text/images", action: "click" },
+        ],
       },
     ],
     videos: [
@@ -242,27 +338,61 @@ export const TOOL_TUTORIALS: Record<string, ToolTutorial> = {
         title: "Create an OpenAI account",
         description: "Go to chat.openai.com and click \"Sign up\". Use your email, Google, Microsoft, or Apple account.",
         action: "navigate",
+        substeps: [
+          { text: "Open your browser and go to chat.openai.com", action: "navigate" },
+          { text: "Click \"Sign up\" on the login page", action: "click" },
+          { text: "Choose your sign-up method: email, Google, Microsoft, or Apple", action: "select" },
+          { text: "If using email: enter your email address and click \"Continue\"", action: "type" },
+          { text: "Create a password (8+ characters)", action: "type" },
+          { text: "Click \"Continue\" to create your account", action: "click" },
+        ],
       },
       {
         title: "Verify your account",
         description: "Check your email for a verification link. Click it to activate your account.",
         action: "verify",
+        substeps: [
+          { text: "Open your email inbox", action: "navigate" },
+          { text: "Find the email from OpenAI (check spam/junk if not in inbox)", action: "navigate" },
+          { text: "Click the verification link in the email", action: "click" },
+          { text: "You'll be redirected back to ChatGPT — you're verified", action: "verify" },
+        ],
       },
       {
         title: "Upgrade to ChatGPT Plus (optional)",
         description: "Click your profile icon (bottom-left) → \"Upgrade to Plus\" ($20/mo). This gives you GPT-4, DALL-E, and priority access.",
         action: "click",
         tip: "The free tier uses GPT-4o mini — good enough for basic tasks. Plus unlocks GPT-4o, image gen, and custom GPTs.",
+        substeps: [
+          { text: "Click your profile icon in the bottom-left corner", action: "click" },
+          { text: "Click \"Upgrade to Plus\" in the menu", action: "click" },
+          { text: "Review the plan features ($20/month)", action: "navigate" },
+          { text: "Enter your payment details", action: "type" },
+          { text: "Click \"Subscribe\" to activate Plus", action: "click" },
+        ],
       },
       {
         title: "Start your first conversation",
         description: "Type your prompt in the message box and press Enter. Try: \"Help me write a marketing email for my [product].\"",
         action: "type",
+        substeps: [
+          { text: "Click the message box at the bottom of the screen", action: "click" },
+          { text: "Type your prompt (e.g., \"Help me write a marketing email for my product\")", action: "type" },
+          { text: "Press Enter or click the send arrow", action: "click" },
+          { text: "Wait for ChatGPT to generate a response", action: "wait" },
+          { text: "To continue the conversation, type a follow-up in the same chat", action: "type" },
+        ],
       },
       {
         title: "Explore GPTs",
         description: "Click \"Explore GPTs\" in the sidebar to find specialized assistants for writing, coding, marketing, and more.",
         action: "click",
+        substeps: [
+          { text: "Click \"Explore GPTs\" in the left sidebar", action: "click" },
+          { text: "Browse categories or search for a specific use case", action: "type" },
+          { text: "Click on a GPT to see its description and capabilities", action: "click" },
+          { text: "Click \"Start Chat\" to begin using it", action: "click" },
+        ],
       },
     ],
     videos: [
@@ -860,27 +990,62 @@ export const TOOL_TUTORIALS: Record<string, ToolTutorial> = {
         description: "Go to zapier.com and click \"Sign up free\". Use email or Google.",
         action: "navigate",
         tip: "Free plan gives 100 tasks/month and 5 single-step Zaps.",
+        substeps: [
+          { text: "Open your browser and go to zapier.com", action: "navigate" },
+          { text: "Click \"Sign up free\" in the top-right corner", action: "click" },
+          { text: "Enter your email or click \"Continue with Google\"", action: "type" },
+          { text: "Create a password and click \"Get started free\"", action: "type" },
+        ],
       },
       {
         title: "Create your first Zap",
         description: "Click \"Create Zap\". Choose a Trigger app (e.g., Gmail) and event (e.g., \"New Email\"). Then choose an Action app (e.g., Slack) and event (e.g., \"Send Message\").",
         action: "click",
+        substeps: [
+          { text: "Click the orange \"Create Zap\" button in the dashboard", action: "click" },
+          { text: "In the Trigger section, search for your trigger app (e.g., \"Gmail\")", action: "type" },
+          { text: "Select the app from the results", action: "click" },
+          { text: "Choose a trigger event (e.g., \"New Email\")", action: "select" },
+          { text: "Scroll down to the Action section", action: "navigate" },
+          { text: "Search for your action app (e.g., \"Slack\")", action: "type" },
+          { text: "Choose an action event (e.g., \"Send Channel Message\")", action: "select" },
+        ],
       },
       {
         title: "Connect your apps",
         description: "For each app, click \"Sign in\" to authorize Zapier. This is a one-time setup per app.",
         action: "click",
+        substeps: [
+          { text: "Click \"Sign in\" next to the trigger app", action: "click" },
+          { text: "A popup opens — log in to your account and click \"Allow\" or \"Authorize\"", action: "click" },
+          { text: "The popup closes and you'll see a green checkmark", action: "verify" },
+          { text: "Repeat for the action app — click \"Sign in\" and authorize", action: "click" },
+          { text: "Configure the fields (e.g., which Slack channel, what message text)", action: "type" },
+        ],
       },
       {
         title: "Test and turn on",
         description: "Click \"Test\" to verify the Zap works. If it succeeds, click \"Publish\" to turn it on. It now runs automatically.",
         action: "verify",
+        substeps: [
+          { text: "Click \"Test\" at the bottom of the Zap editor", action: "click" },
+          { text: "Zapier sends a test through your automation", action: "wait" },
+          { text: "Check the result — verify the action happened (e.g., Slack message sent)", action: "verify" },
+          { text: "If the test passes, click \"Publish\" to make it live", action: "click" },
+          { text: "Your Zap is now running automatically in the background", action: "verify" },
+        ],
       },
       {
         title: "Explore templates",
         description: "Browse zapier.com/apps for pre-built Zap templates. Popular: \"Save Gmail attachments to Google Drive\", \"Post Slack messages from form submissions\".",
         action: "click",
         tip: "Start with simple 2-step Zaps. Add complexity once you're comfortable.",
+        substeps: [
+          { text: "Click \"Templates\" in the left sidebar or go to zapier.com/apps", action: "click" },
+          { text: "Search for your use case (e.g., \"gmail to sheets\")", action: "type" },
+          { text: "Click a template to preview the automation", action: "click" },
+          { text: "Click \"Use this Zap\" to start with it pre-configured", action: "click" },
+        ],
       },
     ],
     videos: [

@@ -16,6 +16,41 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
+/** Parse budget from Vapi — handles "$50-100", "50 to 100", "$500", "around 200", etc. */
+function parseBudget(raw: unknown): number {
+  if (raw == null) return 100;
+  if (typeof raw === "number" && raw > 0) return raw;
+
+  const str = String(raw).replace(/[$,]/g, "").trim().toLowerCase();
+
+  // Try direct number first
+  const direct = Number(str);
+  if (!isNaN(direct) && direct > 0) return direct;
+
+  // Range: "50-100", "50 to 100", "50 - 100"
+  const rangeMatch = str.match(/(\d+)\s*(?:-|to)\s*(\d+)/);
+  if (rangeMatch) {
+    const low = Number(rangeMatch[1]);
+    const high = Number(rangeMatch[2]);
+    // Use the midpoint of the range
+    return Math.round((low + high) / 2);
+  }
+
+  // "around 200", "about 150", "roughly 300"
+  const approxMatch = str.match(/(?:around|about|roughly|approximately|~)\s*(\d+)/);
+  if (approxMatch) return Number(approxMatch[1]);
+
+  // "under 100", "less than 200", "up to 500"
+  const underMatch = str.match(/(?:under|less than|up to|max|maximum)\s*(\d+)/);
+  if (underMatch) return Number(underMatch[1]);
+
+  // Last resort: extract any number from the string
+  const anyNumber = str.match(/(\d+)/);
+  if (anyNumber) return Number(anyNumber[1]);
+
+  return 100;
+}
+
 const STEPS = [
   { label: "Analyzing your business model...", icon: BarChart3 },
   { label: "Identifying automation opportunities...", icon: TrendingUp },
@@ -68,7 +103,7 @@ export default function GeneratingPage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               businessIdea: "General business consultation completed via voice call",
-              budget: 500,
+              budget: 100,
               answers: {},
             }),
           });
@@ -88,7 +123,7 @@ export default function GeneratingPage() {
     const businessIdea = String(
       params.description || params.businessIdea || params.business_description || params.businessType || params.business || ""
     ).trim();
-    const budget = Number(params.budget || params.monthlyBudget || params.monthly_budget) || 500;
+    const budget = parseBudget(params.budget || params.monthlyBudget || params.monthly_budget);
     const { description: _d, budget: _b, businessIdea: _bi, business_description: _bd, businessType: _bt, business: _bus, monthlyBudget: _mb, monthly_budget: _mbu, ...answers } = params;
 
     (async () => {

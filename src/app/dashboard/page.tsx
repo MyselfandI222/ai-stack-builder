@@ -450,7 +450,7 @@ export default function DashboardPage() {
               const colors = PANEL_COLORS[panel.color] || PANEL_COLORS.emerald;
               const isActive = activeView === panel.id;
               const panelTools = getToolsForPanel(panel);
-              const sections = generatePanelData(panel.id, answers, panelTools);
+              const sections = generatePanelData(panel.id, answers, panelTools, analysis);
               const status = worstStatus(sections);
 
               return (
@@ -681,7 +681,7 @@ export default function DashboardPage() {
               const panel = DASHBOARD_PANELS.find((p) => p.id === activeView);
               if (!panel) return null;
               const panelTools = getToolsForPanel(panel);
-              const sections = generatePanelData(panel.id, answers, panelTools);
+              const sections = generatePanelData(panel.id, answers, panelTools, analysis);
               const colors = PANEL_COLORS[panel.color] || PANEL_COLORS.emerald;
               const Icon = PANEL_ICONS[panel.icon] || Activity;
               const status = worstStatus(sections);
